@@ -368,58 +368,8 @@
 (defgeneric compose-in (ink mask))
 (defgeneric compose-out (ink mask))
 
-;;; PATTERN is just the an abstract class of all pattern-like design. 
-
-;;; For performance might consider to sort out pattern, which consists
-;;; of uniform designs only and convert them to an RGBA-image.
-
-(define-protocol-class pattern (design))
-
-(defclass indexed-pattern (pattern)
-  ((array   :initarg :array :reader pattern-array)
-   (designs :initarg :designs :reader pattern-designs)))
-   
-(defun make-pattern (array designs)
-  (make-instance 'indexed-pattern :array array :designs designs))
-
-(defmethod pattern-width ((pattern indexed-pattern))
-  (array-dimension (pattern-array pattern) 1))
-
-(defmethod pattern-height ((pattern indexed-pattern))
-  (array-dimension (pattern-array pattern) 0))
-
-(defclass stencil (pattern)
-  ((array :initarg :array)))
-
-(defun make-stencil (array)
-  (make-instance 'stencil :array array))
-
-(defmethod pattern-width ((pattern stencil))
-  (with-slots (array) pattern
-    (array-dimension array 1)))
-
-(defmethod pattern-height ((pattern stencil))
-  (with-slots (array) pattern
-    (array-dimension array 0)))
-
-;;; These methods are included mostly for completeness and are likely
-;;; of little use in practice.
-(defmethod pattern-array ((pattern stencil))
-  (let ((array (make-array (list (pattern-height pattern)
-                                 (pattern-width pattern)))))
-    (dotimes (i (pattern-height pattern))
-      (dotimes (j (pattern-width pattern))
-        (setf (aref array i j) (+ (* i (array-dimension array 1)) j))))
-    array))
-
-(defmethod pattern-designs ((pattern stencil))
-  (with-slots (array) pattern
-    (let ((designs (make-array (* (pattern-height pattern)
-                                  (pattern-width pattern)))))
-      (dotimes (i (length designs))
-        (setf (aref designs i) (make-opacity (row-major-aref array i))))
-      array)))
-
+;;;
+;;; For patterns look in pattern.lisp
 
 ;;;
 
@@ -436,32 +386,6 @@
                  :transformation transformation
                  :design design))
 
-(defclass transformed-pattern (pattern transformed-design)
-  ())
-
-(defmethod pattern-width ((pattern transformed-pattern))
-  (pattern-width (transformed-design-design pattern)))
-
-(defmethod pattern-height ((pattern transformed-pattern))
-  (pattern-height (transformed-design-design pattern)))
-
-(defmethod transform-region (transformation (design pattern))
-  (make-instance 'transformed-pattern
-                 :transformation transformation
-                 :design design))
-
-;;;
-
-(defclass rectangular-tile (pattern)
-  ((width  :initarg :width   :reader rectangular-tile-width   :reader pattern-width)
-   (height :initarg :height  :reader rectangular-tile-height  :reader pattern-height)
-   (design :initarg :design  :reader rectangular-tile-design)))
-
-(defun make-rectangular-tile (design width height)
-  (make-instance 'rectangular-tile
-    :width  width
-    :height height
-    :design design))
 
 ;;;
 

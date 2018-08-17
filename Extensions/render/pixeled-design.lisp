@@ -201,8 +201,8 @@
 
 (defmethod %make-pixeled-design ((ink rectangular-tile))
   (let* ((design (%make-pixeled-design (rectangular-tile-design ink)))
-         (width (rectangular-tile-width ink))
-         (height (rectangular-tile-height ink))
+         (width (pattern-width ink))
+         (height (pattern-height ink))
          (design-fn (if (region-contains-region-p
                          (pixeled-design-region design)
                          (make-rectangle* 0 0 (1- width) (1- height)))
