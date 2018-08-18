@@ -110,9 +110,10 @@ pattern, stencil, image etc)."))
       (color (with-slots (red green blue) element
                (logior (ash (transform red)   24)
                        (ash (transform green) 16)
-                       (ash (transform blue)   8))))
+                       (ash (transform blue)   8)
+                       255)))
       ;; If no color is supplied, we assume black
-      (opacity (transform (- 1.0 (opacity-value element))))
+      (opacity (transform (opacity-value element)))
       ;; Uniform-compositium is a masked-compositum rgb + opacity
       (uniform-compositum
        (let ((ink (compositum-ink element))
@@ -122,7 +123,7 @@ pattern, stencil, image etc)."))
              (logior (ash (transform red)   24)
                      (ash (transform green) 16)
                      (ash (transform blue)   8)
-                     (transform (- 1.0 opacity-value)))))))
+                     (transform opacity-value))))))
       (indirect-ink (error "Can't convert an INDIRECT-INK to RGBA.")))))
 
 (defgeneric %pattern-rgba-value (pattern x y)

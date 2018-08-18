@@ -128,7 +128,7 @@
                                 :data xdata)) )
     (dotimes (y width)
       (dotimes (x height)
-        (if (> (ldb (byte 8 0) (aref idata x y)) #x80)
+        (if (< (ldb (byte 8 0) (aref idata x y)) #x80)
             (setf (aref xdata x y) 0)
 	    (setf (aref xdata x y) 1))))
     (unless (or (>= width 2048) (>= height 2048)) ;### CLX breaks here

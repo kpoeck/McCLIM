@@ -306,7 +306,10 @@ responsible for setting graphical context mask."))
       (error "Sorry, not yet implemented. ~s" transformation))
     ;; Bah!
     (typecase design
-      ((or climi::indexed-pattern climi::rectangular-tile climi::transformed-design)
+      ((or climi::%rgba-pattern
+           climi::indexed-pattern
+           climi::rectangular-tile
+           climi::transformed-design)
        (multiple-value-bind (tx ty)
            (transform-position transformation 0 0)
          (let ((gc-x (round-coordinate tx))

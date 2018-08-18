@@ -20,7 +20,7 @@
          (2-designs  (list +dark-blue+ +dark-red+))
          (2-designs* (list +dark-salmon+ +dark-slate-grey+))
          (4-designs  (list +orange+ +dark-green+ +red+ +blue+))
-         (4-designs* (list +white+ +black+ +slate-grey+ +black+))
+         (4-designs* (list +purple+ +blue+ +red+ +grey+))
          (x-designs  (list (make-rectangular-tile (make-pattern array2 4-designs) 25 25)
                            (make-rectangular-tile (make-pattern array2 4-designs*) 25 25))))
     ;; set array for 4x4 checkboard
@@ -54,7 +54,7 @@
        (make-rectangular-tile (make-pattern array 2-designs*) 30 30)
        ;; 50x50 checkboard stencil
        ;; But #: medium-gcontext doesn't support stencil pattern, add placeholder.
-       (make-pattern array (list (make-opacity 0.5) (make-opacity 0.1)))
+       (make-pattern array (list (make-opacity 0.6) (make-opacity 0.1)))
        #+ (or) (make-stencil array3)))))
 
 (defparameter *general-description*
