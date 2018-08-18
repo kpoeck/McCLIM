@@ -3,125 +3,134 @@
 ;;;
 ;;; Two dimensional array of pixels
 ;;;
-(defclass two-dim-array-image (basic-image)
+(defclass two-dim-array-image (image)
   ())
-
-(defmethod image-family ((image two-dim-array-image))
-  :two-dim-array)
 
 ;;;
 ;;; RGBA
 ;;;
-(deftype rgba-image-pixels () '(simple-array (unsigned-byte 32) (* *)))
+(defclass rgba-image (two-dim-array-image image-mixin)
+  ())
 
-(defclass rgba-image (two-dim-array-image drawable-image rgba-image-mixin)
-  ((pixels :type rgba-image-pixels)))
+(PROGN
+ (DEFMETHOD IMAGE-RGBA-SET-FN ((IMAGE RGBA-IMAGE) &KEY (DX 0) (DY 0))
+   (LET ((PIXELS (IMAGE-PIXELS IMAGE)))
+     (DECLARE (TYPE (SIMPLE-ARRAY (UNSIGNED-BYTE 32) 2) PIXELS))
+     (LAMBDA (X Y RED GREEN BLUE &OPTIONAL (ALPHA 255))
+       (DECLARE (TYPE FIXNUM X Y RED GREEN BLUE ALPHA))
+       (SETF (AREF PIXELS (+ Y DY) (+ X DX))
+               (DPB RED (BYTE 8 24)
+                    (DPB GREEN (BYTE 8 16)
+                         (DPB BLUE (BYTE 8 8) (DPB ALPHA (BYTE 8 0) 0))))))))
+ (DEFMETHOD IMAGE-RGBA-BLEND-FN ((IMAGE RGBA-IMAGE) &KEY (DX 0) (DY 0))
+   (LET ((PIXELS (IMAGE-PIXELS IMAGE)))
+     (DECLARE (TYPE (SIMPLE-ARRAY (UNSIGNED-BYTE 32) 2) PIXELS))
+     (LAMBDA (X Y RED GREEN BLUE &OPTIONAL (ALPHA 255))
+       (DECLARE (TYPE FIXNUM X Y RED GREEN BLUE ALPHA))
+       (MULTIPLE-VALUE-BIND (R2 G2 B2 A2)
+           (LET ((P (AREF PIXELS (+ Y DY) (+ X DX))))
+             (VALUES (LDB (BYTE 8 24) P) (LDB (BYTE 8 16) P) (LDB (BYTE 8 8) P)
+                     (LDB (BYTE 8 0) P)))
+         (MULTIPLE-VALUE-BIND (RED GREEN BLUE ALPHA)
+             (OCTET-RGBA-BLEND-FUNCTION RED GREEN BLUE ALPHA R2 G2 B2 A2)
+           (SETF (AREF PIXELS (+ Y DY) (+ X DX))
+                 (DPB RED (BYTE 8 24)
+                        (DPB GREEN (BYTE 8 16)
+                             (DPB BLUE (BYTE 8 8)
+                                  (DPB ALPHA (BYTE 8 0) 0))))))))))
+ (DEFMETHOD IMAGE-RGBA-XOR-BLEND-FN ((IMAGE RGBA-IMAGE) &KEY (DX 0) (DY 0))
+   (LET ((PIXELS (IMAGE-PIXELS IMAGE)))
+     (DECLARE (TYPE (SIMPLE-ARRAY (UNSIGNED-BYTE 32) 2) PIXELS))
+     (LAMBDA (X Y RED GREEN BLUE ALPHA)
+       (DECLARE (TYPE FIXNUM X Y RED GREEN BLUE ALPHA))
+       (MULTIPLE-VALUE-BIND (R2 G2 B2 A2)
+           (LET ((P (AREF PIXELS (+ Y DY) (+ X DX))))
+             (VALUES (LDB (BYTE 8 24) P) (LDB (BYTE 8 16) P) (LDB (BYTE 8 8) P)
+                     (LDB (BYTE 8 0) P)))
+         (MULTIPLE-VALUE-BIND (RED GREEN BLUE ALPHA)
+             (OCTET-RGBA-BLEND-FUNCTION (COLOR-OCTET-XOR R2 RED)
+                                        (COLOR-OCTET-XOR G2 GREEN)
+                                        (COLOR-OCTET-XOR B2 BLUE)
+                                        (COLOR-OCTET-XOR A2 ALPHA) R2 G2 B2 A2)
+           (SETF (AREF PIXELS (+ Y DY) (+ X DX))
+                   (DPB RED (BYTE 8 24)
+                        (DPB GREEN (BYTE 8 16)
+                             (DPB BLUE (BYTE 8 8)
+                                  (DPB ALPHA (BYTE 8 0) 0))))))))))
+ (DEFMETHOD IMAGE-ALPHA-SET-FN ((IMAGE RGBA-IMAGE) &KEY (DX 0) (DY 0))
+   (LET ((PIXELS (IMAGE-PIXELS IMAGE)))
+     (DECLARE (TYPE (SIMPLE-ARRAY (UNSIGNED-BYTE 32) 2) PIXELS))
+     (LAMBDA (X Y ALPHA)
+       (DECLARE (TYPE FIXNUM X Y ALPHA))
+       (SETF (AREF PIXELS (+ Y DY) (+ X DX))
+               (DPB ALPHA (BYTE 8 0) (AREF PIXELS (+ Y DY) (+ X DX)))))))
+ (DEFMETHOD IMAGE-GRAY-ALPHA-GET-FN
+            ((IMAGE RGBA-IMAGE) &KEY (DX 0) (DY 0) (REGION NIL))
+   (DECLARE (IGNORABLE DX DY))
+   (LET ((PIXELS (IMAGE-PIXELS IMAGE)))
+     (DECLARE (TYPE (SIMPLE-ARRAY (UNSIGNED-BYTE 32) 2) PIXELS)
+              (TYPE FIXNUM DX DY)
+              (IGNORABLE PIXELS))
+     (LAMBDA (X Y)
+       (DECLARE (TYPE FIXNUM X Y))
+       (IF (OR (NOT REGION) (REGION-CONTAINS-POSITION-P REGION X Y))
+           (ldb (byte 8 0) (AREF PIXELS (+ Y DY) (+ X DX)))
+           (VALUES 0 0))))))
 
-(defmethod initialize-instance :after ((image rgba-image)
-                                       &key)
-  (let ((width (image-width image))
-        (height (image-height image)))
-    (when (and width height (not (slot-boundp image 'pixels)))
-      (setf (slot-value image 'pixels)
-            (make-array (list height width)
-                        :element-type '(unsigned-byte 32)
-                        :initial-element #xFFFFFFFF)))))
+(defun image-rgba-get-fn
+    (image &key (dx 0) (dy 0) (region nil))
+  (declare (ignorable dx dy))
+  (check-type image climi::%rgba-pattern)
+  (let ((pixels (climi::pattern-array image)))
+    (declare (type (simple-array (unsigned-byte 32) 2) pixels)
+             (type fixnum dx dy)
+             (ignorable pixels))
+    (lambda (x y)
+      (declare (type fixnum x y))
+      (if (or (not region) (region-contains-position-p region x y))
+          (let ((p (aref pixels (+ y dy) (+ x dx))))
+            (values (ldb (byte 8 24) p) (ldb (byte 8 16) p) (ldb (byte 8 8) p)
+                    (ldb (byte 8 0) p)))
+          (values 0 0 0)))))
 
-(eval-when (:execute :load-toplevel :compile-toplevel)
-  (def-rgba-image-primitives rgba-image rgba-image-pixels
-                            pixels-var x-var y-var red-var green-var blue-var alpha-var
-                            `(let ((p (aref ,pixels-var
-                                            ,y-var
-                                            ,x-var)))
-                               (values (ldb (byte 8 0) p)
-                                       (ldb (byte 8 8) p)
-                                       (ldb (byte 8 16) p)
-                                       (ldb (byte 8 24) p)))
-                            `(setf (aref ,pixels-var ,y-var ,x-var)
-                                   (dpb ,red-var (byte 8 0)
-                                        (dpb ,green-var (byte 8 8)
-                                             (dpb ,blue-var (byte 8 16)
-                                                  (dpb ,alpha-var (byte 8 24) 0)))))
-                            `(setf (aref ,pixels-var ,y-var ,x-var)
-                                   (dpb ,alpha-var (byte 8 24)
-                                        (aref ,pixels-var ,y-var ,x-var)))))
+(PROGN
+  (DEFMETHOD IMAGE-GRAY-GET-FN
+      ((IMAGE RGBA-IMAGE) &KEY (DX 0) (DY 0) (REGION NIL))
+    (DECLARE (IGNORABLE DX DY))
+    (LET ((PIXELS (IMAGE-PIXELS IMAGE)))
+      (DECLARE (TYPE (SIMPLE-ARRAY (UNSIGNED-BYTE 32) 2) PIXELS)
+               (TYPE FIXNUM DX DY)
+               (IGNORABLE PIXELS))
+      (LAMBDA (X Y)
+        (DECLARE (TYPE FIXNUM X Y))
+        (IF (OR (NOT REGION) (REGION-CONTAINS-POSITION-P REGION X Y))
+            (MULTIPLE-VALUE-BIND (R2 G2 B2 A2)
+                (LET ((P (AREF PIXELS (+ Y DY) (+ X DX))))
+                  (VALUES (LDB (BYTE 8 24) P) (LDB (BYTE 8 16) P)
+                          (LDB (BYTE 8 8) P) (LDB (BYTE 8 0) P)))
+              (RGBA->GRAY R2 G2 B2 A2))
+            0))))
+  (DEFMETHOD IMAGE-ALPHA-GET-FN
+      ((IMAGE RGBA-IMAGE) &KEY (DX 0) (DY 0) (REGION NIL))
+    (DECLARE (IGNORABLE DX DY))
+    (LET ((PIXELS (IMAGE-PIXELS IMAGE)))
+      (DECLARE (TYPE (SIMPLE-ARRAY (UNSIGNED-BYTE 32) 2) PIXELS)
+               (TYPE FIXNUM DX DY)
+               (IGNORABLE PIXELS))
+      (LAMBDA (X Y)
+        (DECLARE (TYPE FIXNUM X Y))
+        (IF (OR (NOT REGION) (REGION-CONTAINS-POSITION-P REGION X Y))
+            (ldb (byte 8 0) (AREF PIXELS (+ Y DY) (+ X DX)))
+            0)))))
 
-(def-rgba-image-functions rgba-image)
-
-;;;
-;;; RGB
-;;;
-(deftype rgb-image-pixels () '(simple-array (unsigned-byte 32) (* *)))
-
-(defclass rgb-image (two-dim-array-image drawable-image rgb-image-mixin)
-  ((pixels :type rgb-image-pixels)))
-
-(defmethod initialize-instance :after ((image rgb-image)
-                                       &key)
-  (let ((width (image-width image))
-        (height (image-height image)))
-    (when (and width height (not (slot-boundp image 'pixels)))
-      (setf (slot-value image 'pixels)
-            (make-array (list height width)
-                        :element-type '(unsigned-byte 32)
-                        :initial-element #xFFFFFFFF)))))
-
-(eval-when (:execute :load-toplevel :compile-toplevel)
-  (def-rgb-image-primitives rgb-image rgb-image-pixels
-                           pixels-var x-var y-var red-var green-var blue-var alpha-var
-                           `(let ((p (aref ,pixels-var
-                                           ,y-var
-                                           ,x-var)))
-                             (values (ldb (byte 8 0) p)
-                                     (ldb (byte 8 8) p)
-                                     (ldb (byte 8 16) p)
-                                     255))
-                           `(setf (aref ,pixels-var ,y-var ,x-var)
-                                  (dpb ,red-var (byte 8 0)
-                                       (dpb ,green-var (byte 8 8)
-                                            (dpb ,blue-var (byte 8 16)
-                                                 (dpb 255 (byte 8 24) 0)))))))
-
-(def-rgb-image-functions rgb-image)
-
-;;;
-;;; Gray
-;;;
-(deftype gray-image-pixels () '(simple-array (unsigned-byte 8) (* *)))
-
-(defclass gray-image (two-dim-array-image drawable-image gray-image-mixin)
-  ((pixels :type gray-image-pixels)))
-
-(defmethod initialize-instance :after ((image gray-image)
-                                       &key)
-  (let ((width (image-width image))
-        (height (image-height image)))
-    (when (and width height (not (slot-boundp image 'pixels)))
-      (setf (slot-value image 'pixels)
-            (make-array (list height width)
-                        :element-type '(unsigned-byte 8)
-                        :initial-element #x00)))))
-
-(eval-when (:execute :load-toplevel :compile-toplevel)
-  (def-gray-image-primitives gray-image gray-image-pixels
-                            pixels-var x-var y-var gray-var alpha-var
-                            `(aref ,pixels-var ,y-var ,x-var)
-                            `(setf (aref ,pixels-var ,y-var ,x-var) ,gray-var)
-                            `(setf (aref ,pixels-var ,y-var ,x-var) ,alpha-var)))
-
-
-(def-gray-image-functions gray-image)
+(DEFMETHOD IMAGE-GRAY-SET-FN ((IMAGE rgba-image) &KEY (DX 0) (DY 0))
+   (LET ((PIXELS (IMAGE-PIXELS IMAGE)))
+     (LAMBDA (X Y GRAY)
+       (DECLARE (TYPE FIXNUM X Y GRAY))
+       (SETF (AREF PIXELS (+ Y DY) (+ X DX)) GRAY))))
 
 ;;;
 ;;; Configuration & Optimization
 ;;;
 (defmethod find-image-class ((family (eql :two-dim-array)) (type (eql :rgba)))
   'rgba-image)
-
-(defmethod find-image-class ((family (eql :two-dim-array)) (type (eql :rgb)))
-  'rgb-image)
-
-(defmethod find-image-class ((family (eql :two-dim-array)) (type (eql :gray)))
-  'gray-image)
-
-(def-fast-rgb-copy-image rgb-image rgb-image)

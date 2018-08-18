@@ -5,12 +5,12 @@
 ;;;
 
 ;;; Font's utilities
-(defparameter *text-sizes* '(:normal         14
+(defparameter *text-sizes* '(:normal         12
 			     :tiny            8
-			     :very-small     10
-			     :small          12
-			     :large          18
-			     :very-large     20
+			     :very-small      8
+			     :small          10
+			     :large          14
+			     :very-large     18
 			     :huge           24))
 
 

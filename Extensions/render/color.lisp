@@ -64,10 +64,17 @@
    (%byte-blend-value b.fg b.bg a.fg a.bg)
    (%prelerp a.fg a.bg a.bg)))
 
+(defun octet-blend-function* (r.fg g.fg b.fg a.fg r.bg g.bg b.bg a.bg)
+  (dpb (%byte-blend-value r.fg r.bg a.fg a.bg) (byte 8 24)
+       (dpb (%byte-blend-value g.fg g.bg a.fg a.bg) (byte 8 16)
+            (dpb (%byte-blend-value b.fg b.bg a.fg a.bg) (byte 8 8)
+                 (%prelerp a.fg a.bg a.bg)))))
+
 (declaim (inline octet-rgba-blend-function)
          (ftype (function (octet octet octet octet octet octet octet octet)
 			  (values octet octet octet octet))
 		octet-rgba-blend-function))
+
 (defun octet-rgba-blend-function (r.fg g.fg b.fg a.fg r.bg g.bg b.bg a.bg)
   (octet-blend-function r.fg g.fg b.fg a.fg r.bg g.bg b.bg a.bg))
 

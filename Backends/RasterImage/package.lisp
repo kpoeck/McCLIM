@@ -25,7 +25,6 @@
 		  #:image-pixmap-mixin
                   #:%make-image
                   #:image-mirror-image
-                  #:image-pattern
 		  ;;#:save-image-to-file
 		  ;;#:save-image-to-stream
 		  )

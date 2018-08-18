@@ -1,8 +1,8 @@
 (in-package :mcclim-render-internals)
 
 (def-grecording draw-image (() image x y) ()
-  (let ((width (image-width image))
-        (height (image-height image))
+  (let ((width (pattern-width image))
+        (height (pattern-height image))
 	(transform (medium-transformation medium)))
     (setf (values x y) (transform-position transform x y))
     (values x y (+ x width) (+ y height))))

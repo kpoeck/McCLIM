@@ -90,9 +90,8 @@
 ;;;
 
 (defun font-generate-opacity-image (paths width height dx dy)
-  (let* ((image (make-image :gray
-                            (1+ (* 1 width))
-                            (1+ (* 1 height)) :opticl)))
+  (let* ((image (make-image (1+ (* 1 width))
+                            (1+ (* 1 height)))))
     (if (= (* width height) 0)
 	nil
         (aa-fill-alpha-paths image nil paths (aa:make-state)

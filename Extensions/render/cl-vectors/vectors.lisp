@@ -16,70 +16,47 @@
   (setf (paths::path-type path) :closed-polyline))
 
 (defun stroke-path (path line-style)
-  (let ((dashes (climi::line-style-dashes line-style)))
-    (when dashes
-        (setf path (paths:dash-path path
-                                    (ctypecase dashes
-                                      (simple-array
-                                       dashes)
-                                      (cons
-                                       (map 'vector #'(lambda (x) x)
-                                            dashes))
-                                      (t
-                                       #(2 1)))))))
-  (setf path (paths:stroke-path path
-				(max 1 (line-style-thickness line-style))
-				:joint (funcall #'(lambda (c)
-						    (if (eq c :bevel)
-							:none
-							c))
-						  (line-style-joint-shape line-style))
-				:caps (funcall #'(lambda (c)
-						   (if (eq c :no-end-point)
-						       :butt
-						       c))
-					       (line-style-cap-shape line-style))))
-  path)
+  (alexandria:when-let ((dashes (climi::line-style-dashes line-style)))
+    (setf path (paths:dash-path path
+                                (ctypecase dashes
+                                  (simple-array dashes)
+                                  (list (coerce dashes 'simple-vector))
+                                  (t #(2 1))))))
+  (paths:stroke-path path
+                     (max 1 (line-style-thickness line-style))
+                     :joint (funcall #'(lambda (c)
+                                         (if (eq c :bevel)
+                                             :none
+                                             c))
+                                     (line-style-joint-shape line-style))
+                     :caps (funcall #'(lambda (c)
+                                        (if (eq c :no-end-point)
+                                            :butt
+                                            c))
+                                    (line-style-cap-shape line-style))))
 
-(defgeneric aa-render-draw-fn (image clip-region pixeled-design))
-(defgeneric aa-render-draw-span-fn (image clip-region pixeled-design))
-(defgeneric aa-render-xor-draw-fn (image clip-region pixeled-design))
-(defgeneric aa-render-xor-draw-span-fn (image clip-region pixeled-design))
-(defgeneric aa-render-alpha-draw-fn (image clip-region))
-(defgeneric aa-render-alpha-draw-span-fn (image clip-region))
-
-(defgeneric aa-cells-sweep/rectangle (image design state clip-region))
-(defgeneric aa-cells-alpha-sweep/rectangle (image design state clip-region))
-(defgeneric aa-stroke-paths (image pixeled-design paths line-style state transformation clip-region))
-(defgeneric aa-fill-paths (image pixeled-design paths state transformation clip-region))
-(defgeneric aa-fill-alpha-paths (image pixeled-design paths state transformation clip-region))
-
-(defmethod aa-cells-sweep/rectangle ((image rgb-image-mixin) (ink pixeled-design) state clip-region)
+(defun aa-cells-sweep/rectangle (image ink state clip-region)
   (let ((draw-function nil)
         (draw-span-function nil)
-        (current-clip-region
-         (if (rectanglep clip-region)
-             nil
-             clip-region)))
-    (clim:with-bounding-rectangle* (min-x min-y max-x max-y)
-	clip-region
-      (setf draw-function
-            (if (typep ink 'pixeled-flipping-design)
-                (aa-render-xor-draw-fn image current-clip-region ink)
-                (aa-render-draw-fn image current-clip-region ink)))
-      (setf draw-span-function
-            (if (typep ink 'pixeled-flipping-design)
-                (aa-render-xor-draw-span-fn image current-clip-region ink)
-                (aa-render-draw-span-fn image current-clip-region ink)))
+        (current-clip-region (if (rectanglep clip-region)
+                                 nil
+                                 clip-region)))
+    (clim:with-bounding-rectangle* (min-x min-y max-x max-y) clip-region
+      (if (typep ink 'pixeled-flipping-design)
+          (setf draw-function (aa-render-xor-draw-fn image current-clip-region ink)
+                draw-span-function (aa-render-xor-draw-span-fn image current-clip-region ink))
+          (setf draw-function (aa-render-draw-fn image current-clip-region ink)
+                draw-span-function (aa-render-draw-span-fn image current-clip-region ink)))
       (%aa-cells-sweep/rectangle state
-                                (floor min-x)
-                                (floor min-y)
-                                (ceiling max-x)
-                                (ceiling max-y)
-                                draw-function
-                                draw-span-function))))
+                                 (floor min-x)
+                                 (floor min-y)
+                                 (ceiling max-x)
+                                 (ceiling max-y)
+                                 draw-function
+                                 draw-span-function))))
 
-(defmethod aa-cells-alpha-sweep/rectangle ((image gray-image-mixin) ink state clip-region)
+;;; XXX: ink is not used
+(defun aa-cells-alpha-sweep/rectangle (image ink state clip-region)
   (let ((draw-function nil)
         (draw-span-function nil)
         (current-clip-region
@@ -100,36 +77,27 @@
                                 draw-function
                                 draw-span-function))))
 
-(defmethod aa-stroke-paths (image pixeled-design paths line-style state transformation clip-region)
+(defun aa-stroke-paths (image design paths line-style state transformation clip-region)
   (vectors::state-reset state)
   (let ((paths (car (mapcar (lambda (path)
                               (stroke-path path line-style))
                             paths))))
     (aa-update-state state paths transformation)
-    (aa-cells-sweep/rectangle image
-                              pixeled-design
-                              state
-                              clip-region)))
+    (aa-cells-sweep/rectangle image design state clip-region)))
 
-(defmethod aa-fill-paths (image pixeled-design paths state transformation clip-region)
+(defun aa-fill-paths (image design paths state transformation clip-region)
   (vectors::state-reset state)
   (dolist (path paths)
     (setf (paths::path-type path) :closed-polyline))
   (aa-update-state state paths transformation)
-  (aa-cells-sweep/rectangle image
-                            pixeled-design
-                            state
-                            clip-region))
+  (aa-cells-sweep/rectangle image design state clip-region))
 
-(defmethod aa-fill-alpha-paths (image pixeled-design paths state transformation clip-region)
+(defun aa-fill-alpha-paths (image design paths state transformation clip-region)
   (vectors::state-reset state)
   (dolist (path paths)
     (setf (paths::path-type path) :closed-polyline))
   (aa-update-state state paths transformation)
-  (aa-cells-alpha-sweep/rectangle image
-                                  pixeled-design
-                                  state
-                                  clip-region))
+  (aa-cells-alpha-sweep/rectangle image design state clip-region))
 
 
 (defun %aa-scanline-sweep (scanline function function-span &key start end)

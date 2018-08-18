@@ -35,6 +35,20 @@
    (alpha :initarg :alpha :type octet :initform 0
           :accessor pixeled-uniform-design-alpha)))
 
+(defmethod climi::%pattern-rgba-value ((pattern pixeled-uniform-design) x y)
+  (with-slots (red green blue alpha) pattern
+    (dpb red (byte 8 24)
+         (dpb green (byte 8 16)
+              (dpb blue (byte 8 8)
+                   alpha)))))
+
+(defmethod climi::%pattern-rgba-value ((pattern pixeled-design) x y)
+  (multiple-value-bind (red green blue alpha) (funcall (pixeled-rgba-fn pattern) x y)
+    (dpb red (byte 8 24)
+         (dpb green (byte 8 16)
+              (dpb blue (byte 8 8)
+                   (or alpha 255))))))
+
 (defun make-pixeled-uniform-design (&key (red 0) (green 0) (blue 0) (alpha 255))
   (make-instance 'pixeled-uniform-design :red red :green green :blue blue :alpha alpha))
 
@@ -101,7 +115,9 @@
 (defun make-pixeled-image-design (&key (image nil))
   (make-instance 'pixeled-image-design
                  :image image
-                 :region (make-rectangle* 0 0 (1- (image-width image)) (1- (image-height image)))))
+                 :region (make-rectangle* 0 0
+                                          (1- (pattern-width image))
+                                          (1- (pattern-height image)))))
 
 (defmethod  pixeled-rgba-fn ((design pixeled-image-design))
   (with-slots (image dx dy region)
@@ -337,6 +353,13 @@
 (defmethod %make-pixeled-design ((ink image-design))
   (let* ((img (slot-value ink 'image)))
     (make-pixeled-image-design :image img)))
+
+(defmethod %make-pixeled-design ((ink climi::%rgba-pattern))
+  (make-instance 'pixeled-image-design
+                 :image ink
+                 :region (make-rectangle* 0 0
+                                          (1- (pattern-width ink))
+                                          (1- (pattern-height ink)))))
 
 ;;;
 ;;; design fix

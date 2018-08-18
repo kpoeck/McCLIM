@@ -1,8 +1,9 @@
+(cl:in-package #:asdf-user)
+
 (defsystem #:mcclim-render
-    :description "Support for raster images McCLIM."
-    :depends-on (#:mcclim-render/core
-                 #:mcclim-render/two-dim-array
-                 #:mcclim-render/opticl))
+  :description "Support for raster images McCLIM."
+  :depends-on (#:mcclim-render/core
+               #:mcclim-render/two-dim-array))
 
 (defsystem #:mcclim-render/core
   :depends-on (#:clim-basic
@@ -10,14 +11,12 @@
                #:mcclim-fonts/truetype)
   :serial t
   :components ((:file "package")
+               (:file "utilities")
                (:file "color")
                (:file "image")
                (:file "image-prim")
                (:file "pixeled-design")
-               (:file "image-ops")
-               (:file "image-fast-ops")
-               (:file "recording")
-               (:file "compatibility")))
+               (:file "recording")))
 
 (defsystem #:mcclim-render/render
     :depends-on (#:mcclim-render/core #:cl-vectors)
@@ -29,14 +28,16 @@
                (:file "prim-text")))))
 
 (defsystem #:mcclim-render/cl-vectors
-    :depends-on (#:clim-basic #:mcclim-fonts/truetype  #:mcclim-render/render #:mcclim-render/two-dim-array #:mcclim-render/opticl)
+  :depends-on (#:clim-basic
+               #:mcclim-fonts/truetype
+               #:mcclim-render/render
+               #:mcclim-render/two-dim-array)
     :components
     ((:module "cl-vectors"
               :serial t
               :components
               ((:file "vectors")
-               (:file "vectors-image-ops")
-               (:file "vectors-image-fast-ops")))))
+               (:file "vectors-image-ops")))))
 
 (defsystem #:mcclim-render/two-dim-array
   :depends-on (#:mcclim-render/core)
@@ -45,14 +46,6 @@
                         :serial t
                         :components
                         ((:file "two-dim-array-image")))))
-
-(defsystem #:mcclim-render/opticl
-  :depends-on (#:mcclim-render/two-dim-array #:opticl)
-  :serial t
-  :components ((:module "opticl"
-                        :serial t
-                        :components
-                        ((:file "opticl-image")))))
 
 (defsystem #:mcclim-render/backend
     :depends-on (#:mcclim-render/cl-vectors)
@@ -70,10 +63,4 @@
 (defsystem #:mcclim-render/clx
     :depends-on (#:mcclim-clx
                  #:mcclim-render/backend
-                 #:mcclim-render/two-dim-array
-                 #:mcclim-render/opticl)
-  :serial t
-  :components ((:module "clx"
-                        :serial t
-                        :components
-                        ((:file "clx-extension")))))
+                 #:mcclim-render/two-dim-array))

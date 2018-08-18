@@ -2,9 +2,7 @@
 (in-package :mcclim-render-internals)
 
 (defclass image-mirror-mixin ()
-  ((image-family :initarg :image-family :initform :opticl)
-   (image-type :initarg :image-type :initform :rgb)
-   (image :initform nil :reader image-mirror-image)
+  ((image :initform nil :reader image-mirror-image)
    (image-lock :initform (climi::make-lock "image"))
    (resize-image-p :initform t :reader image-mirror-resize-image-p)
    (dirty-region :initform nil)
@@ -20,10 +18,6 @@
 ;;; protocols
 ;;;
 
-(defgeneric %make-image (mirror sheet))
-(defgeneric %set-image-region (mirror region))
-(defgeneric %create-mirror-image (mirror width height))
-(defgeneric %notify-image-updated (mirror region))
 
 (defgeneric %draw-image (mirror image x y width height x-dest y-dest clip-region))
 (defgeneric %fill-paths (mirror paths transformation clip-region ink background foreground))
@@ -37,7 +31,8 @@
 ;;; implementation
 ;;;
 
-(defmethod %make-image ((mirror image-mirror-mixin) sheet)
+(defun %make-image (mirror sheet)
+  (check-type mirror image-mirror-mixin)
   (with-slots (image resize-image-p) mirror
     (clim:with-bounding-rectangle* (min-x min-y max-x max-y)
 	(sheet-region sheet)
@@ -45,26 +40,29 @@
 	    (height (ceiling (- max-y min-y))))
 	(%create-mirror-image mirror (1+ width) (1+ height))))))
 
-(defmethod %set-image-region ((mirror image-mirror-mixin) region)
+(defun %set-image-region (mirror region)
+  (check-type mirror image-mirror-mixin)
   (with-slots (image resize-image-p) mirror
     (clim:with-bounding-rectangle* (min-x min-y max-x max-y)
-      region
+        region
       (let ((width (1+ (ceiling (- max-x min-x))))
 	    (height (1+ (ceiling (- max-y min-y)))))
 	(if (and resize-image-p
                  (or (null image)
-                     (/= width (image-width image))
-                     (/= height (image-height image))))
+                     (/= width (pattern-width image))
+                     (/= height (pattern-height image))))
 	    (%create-mirror-image mirror width height)
 	    nil)))))
 
-(defmethod %create-mirror-image ((mirror image-mirror-mixin) width height)
-  (with-slots (image image-family image-type) mirror
-    (setf image (make-image image-type width height image-family)))
+(defmethod %create-mirror-image (mirror width height)
+  (check-type mirror image-mirror-mixin)
+  (with-slots (image) mirror
+    (setf image (make-image width height)))
   (with-slots (dirty-region) mirror
     (setf dirty-region nil)))
 
-(defmethod %notify-image-updated ((mirror image-mirror-mixin) region)
+(defun %notify-image-updated (mirror region)
+  (check-type mirror image-mirror-mixin)
   (when region
     (with-slots (dirty-region) mirror
       (if dirty-region
@@ -111,14 +109,9 @@
   (when (or (not (rectanglep clip-region))
             (not (region-contains-region-p clip-region (make-rectangle* to-x to-y (+ to-x width) (+ to-y height)))))
     (warn "copy image not correct"))
-  (let ((region
-         (if (typep image 'rgba-image-mixin)
-             (blend-image image x y width height
-                         (image-mirror-image mirror)
-                         to-x to-y :alpha 255)
-             (copy-image image x y width height
-                         (image-mirror-image mirror)
-                         to-x to-y))))
+  (let* ((mimage (image-mirror-image mirror))
+         (region #- (or) (copy-image image x y width height mimage to-x to-y)
+                 #+ (or) (blend-image image x y width height mimage to-x to-y)))
     (%notify-image-updated mirror region)))
 
 (defmethod %fill-image-mask ((mirror image-mirror-mixin)
@@ -126,13 +119,13 @@
   #+(or) (when (or (not (rectanglep clip-region))
             (not (region-contains-region-p clip-region (make-rectangle* x y (+ x width) (+ y height)))))
     (warn "fill image mask not correct [~A -> ~A]" clip-region (make-rectangle* x y (+ x width) (+ y height))))
-  (let ((region
-         (fill-image
-          (image-mirror-image mirror)
-          (make-pixeled-design ink :foreground foreground :background background)
-          image-mask
-          :x x :y y :width width :height height
-          :stencil-dx x-dest :stencil-dy y-dest)))
+  (let ((region (fill-image (image-mirror-image mirror)
+                            (make-pixeled-design ink
+                                                 :foreground foreground
+                                                 :background background)
+                            image-mask
+                            :x x :y y :width width :height height
+                            :stencil-dx x-dest :stencil-dy y-dest)))
     (%notify-image-updated mirror region)))
 
 (defmethod %fill-image ((mirror image-mirror-mixin)
