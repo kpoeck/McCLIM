@@ -190,11 +190,11 @@
                                           (make-rectangle* 0 0 (1- width) (1- height)))
                                          (pixeled-rgba-unsafe-fn pdesign)
                                          (pixeled-rgba-fn pdesign))))
-                       (pattern-designs ink))))
+                       (climi::pattern-designs ink))))
     (declare (type (simple-array pixeled-design-fn (*)) designs))
     (make-pixeled-functional-design
      :color-fn (lambda (x y)
-		 (funcall (elt designs (aref (pattern-array ink) y x)) x y))
+		 (funcall (elt designs (aref (climi::pattern-array ink) y x)) x y))
      :region (make-rectangle* 0 0
                               (1- (clim:pattern-width ink))
                               (1- (clim:pattern-height ink))))))
