@@ -192,15 +192,12 @@ pattern, stencil, image etc)."))
         (setf (aref designs i) (make-opacity (row-major-aref array i))))
       array)))
 
-(defclass rectangular-tile (indexed-pattern)
-  ()
-  (:documentation "Rectangular tile repeats a rectangular portion of a design
-throughout the drawing plane. This is most commonly used with patterns."))
-
 (defclass rectangular-tile (pattern)
   ((width  :initarg :width   :reader pattern-width)
    (height :initarg :height  :reader pattern-height)
-   (design :initarg :design  :reader rectangular-tile-design)))
+   (design :initarg :design  :reader rectangular-tile-design))
+  (:documentation "Rectangular tile repeats a rectangular portion of a design
+throughout the drawing plane. This is most commonly used with patterns."))
 
 (defun make-rectangular-tile (design width height)
   (make-instance 'rectangular-tile
@@ -218,7 +215,63 @@ throughout the drawing plane. This is most commonly used with patterns."))
         (%pattern-rgba-value element x y)
         (%rgba-value element))))
 
-;(defclass image-pattern (%array-pattern) ())
+(defclass image-pattern (%rgba-pattern) ()
+  (:documentation "RGBA pattern. Class defined for specialization. Instances of
+this class may be returned by MAKE-PATTERN-FROM-BITMAP-FILE."))
+
+
+;;; Bitmap images (from files)
+;;;
+;;; Based on CLIM 2.2, with an extension permitting the definition of
+;;; new image formats by the user.
+
+(defvar *bitmap-file-readers* (make-hash-table :test 'equalp)
+  "A hash table mapping keyword symbols naming bitmap image formats to a
+function that can read an image of that format. The functions will be called
+with one argument, the pathname of the file to be read. The functions should
+return two values as per READ-BITMAP-FILE.")
+
+(defmacro define-bitmap-file-reader (bitmap-format (&rest args) &body body)
+  "Define a method for reading bitmap images of format BITMAP-FORMAT that will
+be used by READ-BITMAP-FILE and MAKE-PATTERN-FROM-BITMAP-FILE. BODY should
+return two values as per `read-bitmap-file'."
+  `(setf (gethash ,bitmap-format *bitmap-file-readers*)
+         #'(lambda (,@args) ,@body)))
+
+(defun bitmap-format-supported-p (format)
+  "Return true if FORMAT is supported by READ-BITMAP-FILE."
+  (not (null (gethash format *bitmap-file-readers*))))
+
+(define-condition unsupported-bitmap-format (simple-error) ()
+  (:report (lambda (condition stream)
+	     (declare (ignore condition))
+	     (format stream "Unsupported bitmap format")))
+  (:documentation "This condition is signaled when trying to read a
+  bitmap file whose format is not supported." ))
+
+(defun read-bitmap-file (pathname &key (format :bitmap))
+  "Read a bitmap file named by PATHNAME. FORMAT is a keyword symbol naming any
+defined bitmap file format defined by CLIM-EXTENSIONS:DEFINE-BITMAP-FILE-READER.
+
+Two values are returned: a two-dimensional array of pixel values and an array of
+either colors or color names. If the second value is non-NIL, the pixel values
+are assumed to be indexes into this array. Otherwise, the pixel values are taken
+to be RGBA values encoded in 32 bit unsigned integers, with the three most
+significant octets being the values R, G, B and A, in order."
+  (funcall (or (gethash format *bitmap-file-readers*)
+               (gethash :fallback *bitmap-file-readers*)
+               (error 'unsupported-bitmap-format))
+           pathname))
+
+(defun make-pattern-from-bitmap-file (pathname &key designs (format :bitmap))
+  "Read a bitmap file named by PATHNAME. FORMAT is a keyword symbol naming any
+defined bitmap file format defined by CLIM-EXTENSIONS:DEFINE-BITMAP-FILE-READER.
+Returns a pattern representing this file."
+  (multiple-value-bind (array read-designs)
+      (read-bitmap-file pathname :format format)
+    (if read-designs
+        (make-pattern array (or designs read-designs))
+        (make-instance 'image-pattern :array array))))
 
 
 ;;; Transformed patterns
