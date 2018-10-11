@@ -23,7 +23,8 @@
       (clim:radio-box-current-selection "no")
       "yes"))
    (interactor :interactor)
-   (doc ::pointer-documentation))
+   #+clasp (doc :pointer-documentation)
+   #-clasp (doc ::pointer-documentation))
   (:layouts
    (defaults
        (horizontally ()
