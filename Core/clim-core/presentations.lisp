@@ -947,7 +947,7 @@ suitable for SUPER-NAME"))
 
 (defvar *standard-object-class* (find-class 'standard-object))
 
-#-scl
+#-(or clasp scl)
 (defmethod c2mop:compute-applicable-methods-using-classes :around
     ((gf presentation-generic-function) classes)
   (multiple-value-bind (methods success)

@@ -386,7 +386,7 @@
 (define-keysym :+ #x2b)
 (define-keysym :|,| #x2c)
 (define-keysym :- #x2d)
-(define-keysym :\. #x2e)
+#-clasp (define-keysym :\. #x2e)
 (define-keysym :/ #x2f)
 (define-keysym :|0| #x30)
 (define-keysym :|1| #x31)
