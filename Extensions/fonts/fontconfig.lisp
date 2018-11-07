@@ -112,7 +112,8 @@
 (defun parse-fontconfig-output (s)
   (let* ((match-string (concatenate 'string (string #\Tab) "file:"))
          (matching-line
-          (loop for l = (read-line s nil nil)
+          ;;; for #+clasp read-line might fail
+          (loop for l = (handler-case (read-line s nil nil)(error (e) ""))
                 while l
                 if (= (mismatch l match-string) (length match-string))
                    do (return l)))
