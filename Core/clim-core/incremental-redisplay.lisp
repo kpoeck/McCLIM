@@ -721,6 +721,7 @@ in an equalp hash table"))
 		    (ash val -4)))
 	     (mix-it-in (val)
 	       (let ((xval (sxhash val)))
+                 #-clasp
 		 (declare (type fixnum xval))
 		 (when (minusp val)
 		   (setq xval (rot4 xval)))

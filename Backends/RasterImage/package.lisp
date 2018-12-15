@@ -29,8 +29,6 @@
 		  ;;#:save-image-to-stream
 		  )
     (:import-from :mcclim-truetype
-		  #:truetype-font-size
-		  #:truetype-font-face
 		  #:glyph-pixarray
 		  #:ensure-gethash
 		  #:invoke-with-truetype-path-restart
@@ -43,17 +41,10 @@
 		  #:truetype-device-font-name 
 		  #:fontconfig-font-name
 		  #:make-truetype-device-font-name 
-		  #:make-fontconfig-font-name
-		  #:truetype-font-family
-		  #:truetype-font
-		  #:truetype-face
-		  #:truetype-font-size
-		  #:truetype-font-ascent
-		  #:truetype-font-descent
-		  )
+		  #:make-fontconfig-font-name)
     (:export
      #:with-output-to-raster-image-stream
+     #:with-output-to-raster-image-file
      #:with-output-to-rgba-pattern
      #:with-output-to-image-stream))
-
 

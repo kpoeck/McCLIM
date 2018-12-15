@@ -385,6 +385,11 @@
 (defgeneric invoke-with-first-quadrant-coordinates (medium continuation x y))
 
 
+;;;; 10.3.2 Contrasting Dash Patterns
+
+(defgeneric contrasting-dash-pattern-limit (port))
+
+
 ;;; 11.1.1 Text Style Protocol and Text Style Suboptions
 
 (defgeneric text-style-components (text-style))
@@ -412,7 +417,7 @@
 (defgeneric medium-beep (medium))
 
 
-;;; 13.3.2
+;;; 13.3.2 Contrasting Colors
 
 (defgeneric contrasting-inks-limit (port))
 
@@ -1060,11 +1065,13 @@ Returns a SPACE-REQUIREMENT object."))
 
 (defgeneric (setf text-style-mapping)
     (mapping port text-style &optional character-set))
+
 (defgeneric medium-miter-limit (medium)
   (:documentation
    "If LINE-STYLE-JOINT-SHAPE is :MITER and the angle between two
    consequent lines is less than the values return by
    MEDIUM-MITER-LIMIT, :BEVEL is used instead."))
+
 (defgeneric line-style-effective-thickness (line-style medium)
   (:documentation
    "Returns the thickness in device units of a line,
