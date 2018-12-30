@@ -895,28 +895,31 @@ and must never be nil.")
         (values
          point-seq
          (loop for i from 0 below n
-               for p0 = (elt point-seq (mod (+ i -1) n))
-               for p1 = (elt point-seq (mod (+ i  0) n))
-               for p2 = (elt point-seq (mod (+ i +1) n))
-               collect
-               (let* ((dx1 (- (point-x p1) (point-x p0))) (dy1 (- (point-y p1) (point-y p0)))
-                      (dx2 (- (point-x p2) (point-x p1))) (dy2 (- (point-y p2) (point-y p1)))
-                      ;;
-                      (m1  (/ width (sqrt (+ (* dx1 dx1) (* dy1 dy1)))))
-                      (m2  (/ width (sqrt (+ (* dx2 dx2) (* dy2 dy2)))))
-                      ;;
-                      (q0  (make-point (+ (point-x p0) (* m1 dy1)) (- (point-y p0) (* m1 dx1))))
-                      (q1  (make-point (+ (point-x p1) (* m1 dy1)) (- (point-y p1) (* m1 dx1))))
-                      (q2  (make-point (+ (point-x p1) (* m2 dy2)) (- (point-y p1) (* m2 dx2))))
-                      (q3  (make-point (+ (point-x p2) (* m2 dy2)) (- (point-y p2) (* m2 dx2)))) )
-                 ;;
-                 (multiple-value-bind (x y)
-                     (multiple-value-call #'line-line-intersection
-                       (point-position q0) (point-position q1)
-                       (point-position q2) (point-position q3))
-                   (if x
-                       (make-point x y)
-                       (make-point 0 0)))))))))
+            for p0 = (elt point-seq (mod (+ i -1) n))
+            for p1 = (elt point-seq (mod (+ i  0) n))
+            for p2 = (elt point-seq (mod (+ i +1) n))
+            collect
+              ;;; for #clasp
+              (let* ((dx1 (floor (- (point-x p1) (point-x p0))))
+                     (dy1 (floor (- (point-y p1) (point-y p0))))
+                     (dx2 (floor (- (point-x p2) (point-x p1))))
+                     (dy2 (floor (- (point-y p2) (point-y p1))))
+                     ;;
+                     (m1  (floor (/ width (sqrt (+ (* dx1 dx1) (* dy1 dy1))))))
+                     (m2  (floor (/ width (sqrt (+ (* dx2 dx2) (* dy2 dy2))))))
+                     ;;
+                     (q0  (make-point (+ (point-x p0) (* m1 dy1)) (- (point-y p0) (* m1 dx1))))
+                     (q1  (make-point (+ (point-x p1) (* m1 dy1)) (- (point-y p1) (* m1 dx1))))
+                     (q2  (make-point (+ (point-x p1) (* m2 dy2)) (- (point-y p1) (* m2 dx2))))
+                     (q3  (make-point (+ (point-x p2) (* m2 dy2)) (- (point-y p2) (* m2 dx2)))) )
+                ;;
+                (multiple-value-bind (x y)
+                    (multiple-value-call #'line-line-intersection
+                      (point-position q0) (point-position q1)
+                      (point-position q2) (point-position q3))
+                  (if x
+                      (make-point x y)
+                      (make-point 0 0)))))))))
 
   (defun draw-bordered-polygon (medium point-seq
                                        &key (border-width 2)

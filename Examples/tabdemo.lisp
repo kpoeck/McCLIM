@@ -112,9 +112,10 @@
 	(let ((old (tab-layout-pages (tabdemo-layout)))
 	      (new '()))
 	  (loop while old
-		for i = (random (length old))
-		do (push (elt old i) new)
-		   (setf old (remove-if (constantly t) old :start i :count 1)))
+                ;;; #+clasp this used to be an illegal loop use, loop while .. for ... do must be loop for while do
+             do (let ((i (random (length old))))
+                  (push (elt old i) new)
+                  (setf old (remove-if (constantly t) old :start i :count 1))))
 	  new)))
 
 (defmacro with-enabled-tab-layout-page (var &body body)
