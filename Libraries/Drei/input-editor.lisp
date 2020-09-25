@@ -763,7 +763,7 @@ invoke the command, and the accumulated numeric argument."
 (define-presentation-method accept :around
   ((type command-or-form)
    (stream drei-input-editing-mixin)
-   view &key)
+   view &key #+clasp &ALLOW-OTHER-KEYS)
   (with-drei-options ((drei-instance stream)
                       :syntax "Lisp"
                       :keep-syntax t)
@@ -772,7 +772,7 @@ invoke the command, and the accumulated numeric argument."
 (define-presentation-method accept :around
   ((type command)
    (stream drei-input-editing-mixin)
-   view &key)
+   view &key #+clasp &ALLOW-OTHER-KEYS)
   (with-drei-options ((drei-instance stream)
                       :syntax "Fundamental"
                       :keep-syntax nil)
@@ -782,7 +782,7 @@ invoke the command, and the accumulated numeric argument."
   ((type expression)
    (stream drei-input-editing-mixin)
    view
-   &key)
+   &key #+clasp &ALLOW-OTHER-KEYS)
   (with-drei-options ((drei-instance stream)
                       :syntax "Lisp"
                       :keep-syntax t)
@@ -792,7 +792,7 @@ invoke the command, and the accumulated numeric argument."
 (define-presentation-method accept ((type expression)
                                     (stream drei-input-editing-mixin)
                                     (view textual-view)
-				    &key)
+				    &key #+clasp &ALLOW-OTHER-KEYS)
   (let ((*completion-gestures* nil)
         (*possibilities-gestures* nil))
     (with-delimiter-gestures (nil :override t)

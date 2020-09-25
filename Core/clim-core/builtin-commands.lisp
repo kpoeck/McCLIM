@@ -319,7 +319,7 @@
 )                                       ; with-system-redefinition-allowed
 
 (define-presentation-method accept ((type expression) stream (view textual-view)
-                                    &key)
+                                    &key #+clasp &ALLOW-OTHER-KEYS)
   (let* ((object nil)
          (ptype nil))
     #.(funcall (if #+openmcl t #-openmcl nil #'identity #'fourth)
@@ -362,7 +362,7 @@
 (define-presentation-method accept ((type expression)
                                     (stream input-editing-stream)
                                     (view textual-view)
-                                    &key)
+                                    &key #+clasp &ALLOW-OTHER-KEYS)
   ;; This method is specialized to
   ;; input-editing-streams and has thus been
   ;; made slightly more tolerant of input

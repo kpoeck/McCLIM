@@ -160,7 +160,7 @@
 
 ;;; accept method for a town presentation (in any view mode):
 
-(define-presentation-method accept ((type town) stream view &key)
+(define-presentation-method accept ((type town) stream view &key #+clasp &ALLOW-OTHER-KEYS)
   (values               ;suppress values after the first
    ;; provide completion over the names of the towns
    (completing-from-suggestions (Stream :partial-completers '(#\Space))

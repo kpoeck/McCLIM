@@ -54,8 +54,7 @@
   (declare (ignore object acceptably for-context-type))
   (write-string "None" stream))
 
-(define-presentation-method accept ((type null) stream (view textual-view)
-                                    &key)
+(define-presentation-method accept ((type null) stream (view textual-view) &key #+clasp &ALLOW-OTHER-KEYS)
   (values (completing-from-suggestions (stream)
             (suggest "None" nil)
             (suggest "" nil))))
@@ -75,7 +74,7 @@
       (write-string "No" stream)))
 
 (define-presentation-method accept ((type boolean) stream (view textual-view)
-                                    &key)
+                                    &key #+clasp &ALLOW-OTHER-KEYS)
   (accept-using-completion 'boolean
                            stream
                            #'(lambda (input-string mode)
@@ -526,7 +525,7 @@
 (defmethod presentation-replace-input :around
     ((stream input-editing-stream)
      (object pathname) (type (eql 'pathname))
-     view &rest args &key &allow-other-keys)
+     view &rest args &key #+clasp &allow-other-keys)
   ;; This is fully valid and compliant, but it still smells slightly
   ;; like a hack.
   (let ((name (pathname-name object))
@@ -636,7 +635,7 @@
 (define-presentation-method accept ((type completion)
                                     stream
                                     (view textual-view)
-                                    &key)
+                                    &key #+clasp &ALLOW-OTHER-KEYS)
   (accept-using-completion (make-presentation-type-specifier
                             `(completion ,@parameters)
                             options)
@@ -868,7 +867,7 @@
 (define-presentation-method accept ((type sequence)
                                     stream
                                     (view textual-view)
-                                    &key)
+                                    &key #+clasp &ALLOW-OTHER-KEYS)
   (loop
      with separators = (list separator)
      for element = (accept element-type ; i.e., the type parameter
@@ -967,7 +966,7 @@
 (define-presentation-method accept ((type sequence-enumerated)
                                     stream
                                     (view textual-view)
-                                    &key)
+                                    &key #+clasp &ALLOW-OTHER-KEYS)
   (loop
      with element = nil and element-type = nil
        and separators = (list separator)
@@ -1021,7 +1020,7 @@
 (define-presentation-method accept ((type or)
                                     (stream input-editing-stream)
                                     (view textual-view)
-                                    &key)
+                                    &key #+clasp &ALLOW-OTHER-KEYS)
   (with-input-context (type)
       (object type-var)
       (let ((str (read-token stream)))
@@ -1069,7 +1068,7 @@
            :for-context-type for-context-type))
 
 (define-presentation-method accept
-    ((type and) (stream input-editing-stream) (view textual-view) &rest args &key)
+    ((type and) (stream input-editing-stream) (view textual-view) &rest args &key #+clasp &ALLOW-OTHER-KEYS)
   (let ((subtype (first types)))
     (multiple-value-bind (obj ptype)
         (apply-presentation-generic-function accept subtype stream view args)
