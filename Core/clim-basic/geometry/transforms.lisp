@@ -708,6 +708,18 @@ real numbers, and default to 0."
   (let ((r (atan (float y pi) x)))
     (if (< r 0) (+ r (* 2 pi)) r)))
 
+(defun atan* (x y)
+  ;; atan like we need it.
+  ;; For us, phi=0 along the x axis and angles are always between 0 and 2pi.
+  ;;
+  ;; We coerce y to the same float type as pi to have a better
+  ;; accuracy thanks with elliptical objects. -- jd 2019-11-19
+  (if (and (zerop x)(zerop y))
+      ;; (atan 0.0 0.0) has undefined consequences at least if -0 is not supported
+      ;; according to http://www.lispworks.com/documentation/HyperSpec/Body/f_asin_.htm#atan
+      (float 0 pi)
+      (atan (float y pi) x)))
+
 (defun correct-angle (a phi)
   (if (< a phi)
       (+ a (* 2 pi))
