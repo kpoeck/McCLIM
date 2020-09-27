@@ -525,7 +525,7 @@
 (defmethod presentation-replace-input :around
     ((stream input-editing-stream)
      (object pathname) (type (eql 'pathname))
-     view &rest args &key #+clasp &allow-other-keys)
+     view &rest args &key &allow-other-keys)
   ;; This is fully valid and compliant, but it still smells slightly
   ;; like a hack.
   (let ((name (pathname-name object))
